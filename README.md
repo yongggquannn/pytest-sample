@@ -51,12 +51,10 @@ python3 -m pytest -v
 
 ```
 pytest-sample/
-├── src/
-│   ├── __init__.py
-│   └── calculator.py
-├── tests/
-│   ├── __init__.py
-│   └── test_calculator.py
-├── requirements.txt
-└── README.md
+├── tests/                  # Test files
+│   └── test_mock_api.py   # API testing with mocked responses
+├── input/                  # Configuration and data files
+│   └── testing.yml        # Test configuration data
+├── requirements.txt        # Python dependencies
+└── README.md              # Project documentation
 ```
