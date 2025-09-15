@@ -180,3 +180,91 @@ class TestProductsEndpointsMocked(TestEcommerceAPIMocked):
         
         response = requests.get(f"{self.BASE_URL}/products/{product_id}")
         assert response.status_code == 404
+
+
+class TestOrdersEndpointsMocked(TestEcommerceAPIMocked):
+    
+    # Test retrieval of orders for authenticated user
+    @patch('requests.get')
+    def test_get_orders_success(self, mock_get, auth_headers):
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = [
+            {
+                "id": "order_67890",
+                "customerId": "customer_123",
+                "items": [
+                    {
+                        "productId": "12345",
+                        "productName": "Wireless Headphones",
+                        "quantity": 2,
+                        "price": 199.99
+                    }
+                ],
+                "total": 399.98,
+                "status": "processing"
+            }
+        ]
+        mock_get.return_value = mock_response
+        
+        response = requests.get(f"{self.BASE_URL}/orders", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        assert len(data) == 1
+        mock_get.assert_called_once_with(f"{self.BASE_URL}/orders", headers=auth_headers)
+    
+    # Test retrieval of orders without authentication
+    @patch('requests.get')
+    def test_get_orders_unauthorized(self, mock_get):
+        mock_response = Mock()
+        mock_response.status_code = 401
+        mock_response.json.return_value = {
+            "error": "UNAUTHORIZED",
+            "message": "Authentication required"
+        }
+        mock_get.return_value = mock_response
+        
+        response = requests.get(f"{self.BASE_URL}/orders")
+        assert response.status_code == 401
+    
+    # Test creation of a new order successfully
+    @patch('requests.post')
+    def test_create_order_success(self, mock_post, auth_headers):
+        order_data = {
+            "items": [{"productId": "12345", "quantity": 2}],
+            "shippingAddress": {
+                "street": "123 Main St",
+                "city": "New York",
+                "postalCode": "10001",
+                "country": "USA"
+            }
+        }
+        
+        mock_response = Mock()
+        mock_response.status_code = 201
+        mock_response.json.return_value = {
+            "id": "order_12345",
+            "customerId": "customer_123",
+            "items": [
+                {
+                    "productId": "12345",
+                    "productName": "Wireless Headphones",
+                    "quantity": 2,
+                    "price": 199.99,
+                    "subtotal": 399.98
+                }
+            ],
+            "total": 399.98,
+            "status": "pending",
+            "shippingAddress": order_data["shippingAddress"]
+        }
+        mock_post.return_value = mock_response
+        
+        response = requests.post(f"{self.BASE_URL}/orders", 
+                               json=order_data, 
+                               headers=auth_headers)
+        assert response.status_code == 201
+        data = response.json()
+        assert "id" in data
+        assert len(data["items"]) == 1
